@@ -1,0 +1,77 @@
+- name: Install Kubernetes & CRI-O
+  block:
+    - name: Create CRI-O config file
+      ansible.builtin.file:
+        path: "/etc/modules-load.d/crio.conf"
+        state: "touch"
+
+    - name: Add modules in conf file
+      ansible.builtin.blockinfile:
+        path: "/etc/modules-load.d/crio.conf"
+        block: |
+          overlay
+          br_netfilter
+
+    - name: Enable sysctl params
+      ansible.builtin.file:
+        path: "/etc/sysctl.d/99-kubernetes-cri.conf"
+        state: "touch"
+
+    - name: Add sysctl configuration
+      ansible.builtin.blockinfile:
+        path: "/etc/sysctl.d/99-kubernetes-cri.conf"
+        block: |
+          net.bridge.bridge-nf-call-iptables = 1
+          net.ipv4.ip_forward = 1
+          net.bridge.bridge-nf-call-ip6tables = 1
+
+    - name: enable overlayFS & VxLan pod communication
+      ansible.builtin.shell: |
+              sudo modprobe overlay
+              sudo modprobe br_netfilter
+
+    - name: Reload parameters
+      ansible.builtin.command: sudo sysctl --system
+
+    - name: Disabling swap
+      ansible.builtin.shell: |
+        sudo swapoff -a
+        sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+
+    - name: Add  Kubernetes & CRI-O GPG keys
+      ansible.builtin.apt_key:
+        url: "{{ item }}"
+        state: present
+      loop:
+        - https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_22.04/Release.key
+        - https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable:cri-o:1.28/xUbuntu_22.04//Release.key
+        - https://packages.cloud.google.com/apt/doc/apt-key.gpg
+
+    - name: Add  Kubernetes & CRI-O repo
+      ansible.builtin.apt_repository:
+        repo: "{{ item }}"
+        state: present
+      loop:
+        - deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_22.04/ /
+        - deb http://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/1.28/xUbuntu_22.04/ /
+        - deb https://apt.kubernetes.io/ kubernetes-xenial main
+
+    - name: Install Kubernetes & CRI-O Packages
+      ansible.builtin.apt:
+        name:
+          - cri-o
+          - cri-o-runc
+          - cri-tools
+          - kubectl
+          - kubeadm
+          - kubelet
+        update_cache: true
+
+    - name: Reloading sysctl daemon
+      ansible.builtin.command: sudo systemctl daemon-reload
+
+    - name: Enabling CRI-O
+      ansible.builtin.systemd:
+        name: crio
+        state: started
+        enabled: true

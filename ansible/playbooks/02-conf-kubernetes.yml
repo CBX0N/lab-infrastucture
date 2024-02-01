@@ -1,0 +1,32 @@
+- name: Configure VM to Run Kubernetes
+  hosts: kubernetes
+  become: true
+  tasks:
+    - name: Initialise VM
+      ansible.builtin.import_tasks:
+        file: plays/vm-initialisation.ansible.yml
+    - name: Create K8s admin user
+      ansible.builtin.import_tasks:
+        file: plays/k8s/k8s-configure-user.ansible.yml
+    - name: Install Kubernetes & CRI-O
+      ansible.builtin.import_tasks:
+        file: plays/k8s/k8s-install-packages.ansible.yml
+
+- name: Configure Master Node
+  hosts: master
+  become: true
+  tasks:
+    - name: Configure Master Node
+      ansible.builtin.import_tasks:
+        file: plays/k8s/k8s-configure-master.ansible.yml
+    - name: Configure Metrics Server
+      ansible.builtin.import_tasks:
+        file: plays/k8s/k8s-configure-metrics.ansible.yml
+
+- name: Configure Worker Node
+  hosts: worker
+  become: true
+  tasks:
+    - name: Configure Worker Node
+      ansible.builtin.import_tasks:
+        file: plays/k8s/k8s-configure-worker.ansible.yml

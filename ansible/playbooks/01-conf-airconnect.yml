@@ -1,0 +1,65 @@
+- name: Configure VM to Run Airconnect
+  hosts: airconnect
+  become: true
+  vars:
+    - airconnect_url: https://github.com/philippe44/AirConnect/releases/download/1.6.0/AirConnect-1.6.0.zip
+    - airconnect_version: 1.6.0
+    - arch: x86_64
+    - os: linux
+    - service_path: ../files/aircast.service
+  tasks:
+    - name: Initialise VM
+      ansible.builtin.import_tasks:
+        file: plays/vm-initialisation.ansible.yml
+    - name: Running Prequisites
+      block:
+        - name: Install Package Requirements
+          ansible.builtin.apt:
+            pkg:
+              - unzip
+              - libssl-dev
+            state: present
+            update_cache: true
+        - name: Create AirConnect directories
+          ansible.builtin.file:
+            path: "{{ item }}"
+            state: directory
+            mode: "0755"
+          loop:
+            - "/tmp/airconnect-{{ airconnect_version }}"
+            - /var/lib/airconnect/
+        - name: Download Airconnect Package (v{{ airconnect_version }})
+          ansible.builtin.get_url:
+            url: "{{ airconnect_url }}"
+            dest: "/tmp/airconnect-{{ airconnect_version }}/airconnect-{{ airconnect_version }}.zip"
+            mode: "0755"
+            force: true
+    - name: Install Airconnect (v{{ airconnect_version }})
+      block:
+        - name: Unarchive Package
+          ansible.builtin.shell:
+            chdir: "/tmp/airconnect-{{ airconnect_version }}"
+            cmd: "unzip /tmp/airconnect-{{ airconnect_version }}/airconnect-{{ airconnect_version }}.zip"
+        - name: Copy Package Binaries
+          ansible.builtin.copy:
+            src: "/tmp/airconnect-{{ airconnect_version }}/aircast-{{ os }}-{{ arch }}"
+            dest: "/var/lib/airconnect/aircast-{{ os }}-{{ arch }}"
+            mode: "0755"
+            remote_src: true
+        - name: Copy AirCast Service to Systemd
+          ansible.builtin.copy:
+            src: "{{ service_path }}"
+            dest: "/etc/systemd/system/aircast.service"
+            mode: "0755"
+        - name: Clean up tmp directory
+          ansible.builtin.file:
+            path: "/tmp/airconnect-{{ airconnect_version }}"
+            state: absent
+        - name: Create and Start AirCast Service
+          ansible.builtin.systemd:
+            name: aircast
+            state: started
+            enabled: true
+    - name: Restarting Server
+      ansible.builtin.reboot:
+        pre_reboot_delay: 1

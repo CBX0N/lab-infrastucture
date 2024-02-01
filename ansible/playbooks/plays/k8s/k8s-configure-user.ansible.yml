@@ -1,0 +1,22 @@
+- name: Create K8s admin user
+  block:
+    - name: Create the 'k8sadmin' user
+      ansible.builtin.user:
+        name: k8sadmin
+        append: true
+        state: present
+        createhome: true
+        shell: /bin/bash
+
+    - name: Allow 'k8sadmin' sudo permission
+      ansible.builtin.lineinfile:
+        dest: /etc/sudoers
+        line: 'k8sadmin ALL=(ALL) NOPASSWD: ALL'
+        validate: 'visudo -cf %s'
+
+    - name: Set authorized keys for the k8sadmin user
+      ansible.posix.authorized_key:
+        user: k8sadmin
+        key: "{{ item }}"
+      with_file:
+        - ~/.ssh/id_rsa.pub
