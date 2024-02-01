@@ -16,12 +16,12 @@ build {
       "sudo sync"
     ]
   }
-  # provisioner "file" {
-  #   source      = "files/99-pve.cfg"
-  #   destination = "/tmp/99-pve.cfg"
-  # }
+  provisioner "file" {
+    source      = "files/99-pve.cfg"
+    destination = "/tmp/99-pve.cfg"
+  }
 
-  # provisioner "shell" {
-  #   inline = ["sudo cp /tmp/99-pve.cfg /etc/cloud/cloud.cfg.d/99-pve.cfg"]
-  # }
+  provisioner "shell" {
+    inline = ["sudo cp /tmp/99-pve.cfg /etc/cloud/cloud.cfg.d/99-pve.cfg"]
+  }
 }
