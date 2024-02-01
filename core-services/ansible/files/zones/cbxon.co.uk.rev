@@ -1,0 +1,17 @@
+$TTL    604800
+; SOA record with MNAME and RNAME updated
+@       IN      SOA     cbxon.co.uk. root.cbxon.co.uk. (
+                              2         ; Serial Note: increment after each change
+                         604800         ; Refresh
+                          86400         ; Retry
+                        2419200         ; Expire
+                         604800 )       ; Negative Cache TTL
+; Name server record 
+@       IN      NS      ns1.cbxon.co.uk.
+; A record for name server
+;ns1      IN      A       10.116.0.2
+; PTR record for name server
+;2   IN      PTR     ns1.cbxon.co.uk
+; PTR record for clients
+3   IN      PTR     pve.cbxon.co.uk
+;4   IN      PTR     client2.cbxon.co.uk

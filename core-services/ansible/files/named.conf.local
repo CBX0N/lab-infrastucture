@@ -1,0 +1,8 @@
+zone "cbxon.co.uk" IN { // define the forward zone
+        type master;
+        file "/etc/bind/zones/cbxon.co.uk";
+};
+zone "0.116.10.in-addr.arpa" IN { // define the reverse zone
+        type master;
+        file "/etc/bind/zones/cbxon.co.uk.rev";
+};
